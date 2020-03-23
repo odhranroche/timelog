@@ -12,27 +12,28 @@ A command line task timer. Logs are kept and a breakdown of time spent on each t
 
 package.path = "?.lua;" .. package.path
 
-local lfs = require("lfs")
-require ("fileutils")
-require ("timeutils")
-require ("stringutils")
+local lfs         = require("lfs")
+
+local fileutils   = require ("fileutils")
+local timeutils   = require ("timeutils")
+local stringutils = require ("stringutils")
 
 local LOG_DIR = "" -- specify directory to store logs
 local CURR_TASK = nil
 
 function get_todays_log()
-  local today = get_date()
+  local today = timeutils.get_date()
   
-  if file_exists(today, LOG_DIR) then
+  if fileutils.file_exists(today, LOG_DIR) then
     return today
   else
-    return create_file(today, LOG_DIR)
+    return fileutils.create_file(today, LOG_DIR)
   end
 end
 
 function start_task(activity_name)
   local task = {["activity"]   = activity_name,
-                ["start_time"] = get_time(),
+                ["start_time"] = timeutils.get_time(),
                 ["end_time"]   = 0,
                 ["total_time"] = 0}
 
@@ -42,33 +43,33 @@ end
 function finish_task(task)
   local finished_task = {["activity"]   = task.activity,
                          ["start_time"] = task.start_time,
-                         ["end_time"]   = get_time(),
-                         ["total_time"] = get_timer()}
+                         ["end_time"]   = timeutils.get_time(),
+                         ["total_time"] = timeutils.get_timer()}
 
   return finished_task
 end 
 
 function log_task(task, filename)
-  if not file_exists(filename, LOG_DIR) then
+  if not fileutils.file_exists(filename, LOG_DIR) then
     error("File " .. filename .. " does not exist.")
   end
   
-  local file = safe_open(filename, LOG_DIR, "a")
+  local file = fileutils.safe_open(filename, LOG_DIR, "a")
   file:write(task.activity   .. ",")
   file:write(task.start_time .. ",")
   file:write(task.end_time   .. ",")
   file:write(task.total_time .. "\n")
   io.flush()
-  safe_close(file)
+  fileutils.safe_close(file)
   
   return true  
 end
 
 function get_activities(filename)
-  if not file_exists(filename, LOG_DIR) then
+  if not fileutils.file_exists(filename, LOG_DIR) then
     print("\nFile " .. filename .. " does not exist.")
   else
-    local trackfile = file_to_table(filename, LOG_DIR)
+    local trackfile = fileutils.file_to_table(filename, LOG_DIR)
     
     local activities = {}
     for _, task in ipairs(trackfile) do
@@ -86,10 +87,10 @@ function activity_exists(activity, activities)
 end
 
 function get_summary(filename)
-  if not file_exists(filename, LOG_DIR) then
+  if not fileutils.file_exists(filename, LOG_DIR) then
     print("\nFile " .. filename .. " does not exist.")
   else
-    local trackfile = file_to_table(filename, LOG_DIR)
+    local trackfile = fileutils.file_to_table(filename, LOG_DIR)
     local activities = get_activities(filename)
     
     local activity_time = {}
@@ -144,7 +145,7 @@ end
 function parse_input(str, activities)
   if str == "exit" or str == "quit" then
     return "exit"
-  elseif starts_with(str, "view") then
+  elseif stringutils.starts_with(str, "view") then
     return "view"
   elseif str == "pause" or str == "stop" then
     return "pause"
@@ -156,17 +157,13 @@ function parse_input(str, activities)
 end
 
 function run()
-  -- if not lfs.chdir(LOG_DIR) then
-  --   error("Unable to chdir to log dir.")
-  -- end
-  
   local todays_log   = get_todays_log()
   local activities   = get_activities(todays_log)
   local current_task = nil
   
   while true do
     prompt()
-    local input = get_input()
+    local input = stringutils.get_input()
     
     if current_task then
       local finished_task = finish_task(current_task)
@@ -192,7 +189,7 @@ function run()
     
     if p_input == "known" or p_input == "unknown" then
       current_task = start_task(input)
-      start_timer()
+      timeutils.start_timer()
     end      
     
   end
